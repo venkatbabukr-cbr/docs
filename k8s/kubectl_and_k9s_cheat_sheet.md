@@ -3,6 +3,7 @@
 This comprehensive cheat sheet maps core Kubernetes architectural concepts to their practical `kubectl` commands and [K9s TUI](https://github.com/derailed/k9s) shortcuts.
 
 **How to use this sheet:**
+* **K9s Quick Guide** explains the logic behind K9s key bindings, so the shortcuts in the tables are easy to remember.
 * **Universal Commands** covers the verbs that work on *any* resource. Learn these first.
 * Each **Core Concept** section has a **Get commands** table and a **Concept-specific actions** table. Actions are tagged by intent: 🔍 **Inspect**, 🐞 **Debug**, or ✏️ **Change**.
 * **Troubleshooting Pod States** at the end maps common failure statuses to their first diagnostic command.
@@ -19,6 +20,65 @@ This comprehensive cheat sheet maps core Kubernetes architectural concepts to th
 | **Permanent Disks** | PersistentVolumeClaims (PVC) → PersistentVolumes (PV) | Preserving data across restarts |
 | **Specialized Workloads** | StatefulSets, DaemonSets, Jobs / CronJobs | Handling databases, system daemons, and tasks |
 | **Cluster Management** | Namespaces & RBAC | Security, isolation, and access control |
+
+---
+
+## 🐶 K9s Quick Guide
+
+K9s is a terminal UI that wraps `kubectl`. Every K9s shortcut in this sheet follows a small set of rules, so learning the rules first makes the individual keys easy to recall.
+
+### K9s Key Bindings Logic
+
+K9s bindings work in five layers, each with its own rule.
+
+#### 1. Vim handles navigation and modes
+
+These come straight from Vim and stay consistent across every view:
+
+* **`:`** enters command mode, like Vim's ex commands. Type a resource name to jump to it.
+* **`/`** filters the current list, like Vim's search.
+* **`j`** and **`k`** move down and up. **`Esc`** backs out of whatever you're in.
+* **`?`** shows help, as in Vim and `less`.
+
+#### 2. Command mode reuses kubectl's short names
+
+Whatever you'd type after `kubectl get`, you type after `:`. `kubectl get deploy` becomes `:deploy`, and `kubectl get pvc` becomes `:pvc`. Knowing kubectl short names means you already know K9s navigation. When unsure, type `:` plus a partial name to autocomplete.
+
+#### 3. Plain letters are safe verbs on the selected item
+
+A single lowercase key is the first letter of the action, and it never destroys anything:
+
+| Key | Mnemonic |
+| :--- | :--- |
+| `d` | **d**escribe |
+| `y` | **y**aml |
+| `e` | **e**dit |
+| `l` | **l**ogs |
+| `s` | **s**hell (on a pod), **s**cale (on a Deployment), **s**uspend (on a CronJob) |
+| `p` | **p**revious logs (inside the log view) |
+| `r` | **r**estart |
+| `t` | **t**rigger (CronJobs) |
+
+Describe gets the easy single key because it's harmless, which is exactly why delete does *not*.
+
+#### 4. Ctrl means "careful" or "change the view itself"
+
+Ctrl is the guard rail. It marks either something destructive or something that affects the whole screen rather than one item:
+
+* **Destructive:** `Ctrl + d` **d**elete (with confirmation), `Ctrl + k` **k**ill (force-delete, no confirmation).
+* **View-level:** `Ctrl + w` toggles **w**ide columns, `Ctrl + a` lists **a**ll aliases.
+
+The rule: a plain letter acts on the item, a Ctrl letter is dangerous or global.
+
+#### 5. Shift sorts, numbers pick namespaces
+
+* **Shift + letter** sorts by the column starting with that letter: `Shift + c` **C**PU, `Shift + m` **M**emory, `Shift + n` **N**ame, `Shift + a` **A**ge. The notable exception is `Shift + f` for port-**f**orward.
+* **`0`** shows all namespaces, and **`1`** to **`9`** switch to your favorites. Think of `0` as "no filter."
+
+#### Two things that trip people up
+
+* **The same letter changes meaning by view.** The letter maps to *the most natural action for that resource*: pods have no replicas to scale, and Deployments have no single container to shell into, so there's no collision in practice. The hint bar at the top of every view lists the keys valid there, so glance up rather than memorizing per-view tables.
+* **`Enter` and `Esc` follow ownership.** `Enter` drills down the hierarchy (Deployment → Pods → Containers), and `Esc` climbs back up. It mirrors the resource tree that `:xray` shows.
 
 ---
 
@@ -196,6 +256,7 @@ Replace `<type>` with any resource type or short name (`po`, `deploy`, `svc`, `c
 
 | Intent | `kubectl` Command | K9s Shortcut | Description |
 | :--- | :--- | :--- | :--- |
+| 🔍 Inspect | **`kubectl describe role <name> -n <ns>`** | Press **`d`** on a role in **`:role`** | Lists every privilege a Role grants as Resources, Resource Names, and Verbs. Use `kubectl describe clusterrole <name>` for ClusterRoles. |
 | 🔍 Inspect | **`kubectl auth can-i <verb> <resource> -n <ns>`** | *None* | Checks whether *you* can perform an action, e.g. `kubectl auth can-i delete pods -n staging`. |
 | 🔍 Inspect | **`kubectl auth can-i --list -n <ns>`** | *None* | Lists everything you are allowed to do in a namespace. |
 | 🐞 Debug | **`kubectl auth can-i <verb> <resource> -n <ns> --as=system:serviceaccount:<ns>:<sa>`** | *None* | Tests a ServiceAccount's permissions. The fastest way to debug `403 Forbidden` errors from pods. |
