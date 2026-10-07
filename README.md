@@ -4,3 +4,4 @@
 
 # K8S
 1. [Kubernetes Architecture & Reference Cheat Sheet](k8s/kubectl_and_k9s_cheat_sheet.md)
+2. [K9s Quick Guide](k8s/k9s_guide.md)
